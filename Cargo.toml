@@ -7,7 +7,6 @@ edition = "2021"
 bevy = { version = "0.14", features = ["dynamic_linking"] }
 bytemuck = "1.18.0"
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
-memmap2 = "0.9.5"
 bevy_flycam = "*"
 
 [profile.dev]
