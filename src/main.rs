@@ -26,10 +26,15 @@ use bevy::{
 };
 use bevy_flycam::prelude::*;
 use bytemuck::{Pod, Zeroable};
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 fn main() {
     App::new()
-        .add_plugins((DefaultPlugins, CustomMaterialPlugin, PlayerPlugin))
+        .add_plugins((DefaultPlugins, CustomMaterialPlugin, PlayerPlugin, WorldInspectorPlugin::new()))
+        .insert_resource(MovementSettings {
+            sensitivity: 0.00015, // default: 0.00012
+            speed: 24.0, // default: 12.0
+        })
         .add_systems(Startup, setup)
         .run();
 }
@@ -43,27 +48,32 @@ fn index_to_vec(index: i32, dim: i32) -> (i32, i32, i32) {
 }
 
 fn setup(mut commands: Commands, mut meshes: ResMut<Assets<Mesh>>) {
-    let margin = 1.0;
-    let dim = 100;
+    let margin = 0.6;
+    let dim: i32 = 100;
+    let half = (margin * dim as f32) / 2.0;
+    let offset = Vec3::new(half, half, half) * -1.0;
 
     commands.spawn((
         meshes.add(Cuboid::new(0.5, 0.5, 0.5)),
         SpatialBundle::INHERITED_IDENTITY,
         InstanceMaterialData(
-            (0..1000000)
+            (0..dim.pow(3))
                 .map(|i| index_to_vec(i, dim))
-                .map(|(x, y, z)| InstanceData {
-                    position: Vec3::new(x as f32 * margin, y as f32 * margin, z as f32 * margin),
-                    scale: 0.5,
+                .map(|(x, y, z)| Vec3::new(x as f32, y as f32, z as f32) + offset)
+                .filter(|v| v.length() > 20.0)
+                .map(|v| InstanceData {
+                    position: Vec3::new(v.x * margin, v.y * margin, v.z * margin),
+                    scale: 0.5, 
                     color: LinearRgba::from(Color::srgb(
-                        x as f32 / dim as f32,
-                        y as f32 / dim as f32,
-                        z as f32 / dim as f32,
+                        v.x / dim as f32,
+                        v.y / dim as f32,
+                        v.z / dim as f32,
                     ))
                     .to_f32_array(),
                 })
                 .collect(),
-        ), NoFrustumCulling
+        ),
+        NoFrustumCulling,
     ));
 }
 
